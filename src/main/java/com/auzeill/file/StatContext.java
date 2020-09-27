@@ -129,11 +129,11 @@ public class StatContext {
       .collect(Collectors.toCollection(LinkedList::new));
   }
 
-  private static String pathToSort(String path) {
+  static String pathToSort(String path) {
     if (path.equals(".")) {
-      return "\uFFFF";
+      return "\uFFFF\uFFFF";
     }
-    return path.replace('\\', '\uFFFF').replace('/', '\uFFFF');
+    return path.replace('\\', '\u0001').replace('/', '\u0001') + "\u0001\uFFFF";
   }
 
   public Path newStatSavedPath() {
