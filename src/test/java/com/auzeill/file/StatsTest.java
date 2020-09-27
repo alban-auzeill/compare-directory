@@ -144,6 +144,16 @@ class StatsTest {
         "~mod~ f3| size 4 -> 15 | modifiedTime 2020-09-02T15:43:48.680382Z -> 2020-09-02T15:43:48.680382Z | sha1OrSymbolicLink cca5603cae64651971a35bc1488f0d23ddabdff9 -> 1fa817e97796161063e307eac706bb8b06cf956c |" + System.lineSeparator() +
         "+new+ f4|f|16|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|17c494d126c27755e2134a4388178d808b139ce9" + System.lineSeparator() +
         "~mod~ .| size 16 -> 39 | modifiedTime 2020-09-02T15:43:48.680382Z -> 2020-09-02T15:43:48.680382Z | sha1OrSymbolicLink f81b3e16656c1bd84d7522ed2f83fa996ffd8497 -> 2d8050016ac5619885aaac0402f8c5d88cceb077 |" + System.lineSeparator());
+
+    out = new ByteArrayOutputStream();
+    stream = new PrintStream(out, true, UTF_8);
+    Stats.stats(stream, new String[] { "--diff", "--color", tempDir.toString() });
+    assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
+      .isEqualTo("" +
+        StatContext.ANSI_RED + "-del- f2|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|2aed8aa9f826c21ef07d5ee15b48eea06e9c8a62" + StatContext.ANSI_RESET + System.lineSeparator() +
+        StatContext.ANSI_BLUE + "~mod~ f3| size 4 -> 15 | modifiedTime 2020-09-02T15:43:48.680382Z -> 2020-09-02T15:43:48.680382Z | sha1OrSymbolicLink cca5603cae64651971a35bc1488f0d23ddabdff9 -> 1fa817e97796161063e307eac706bb8b06cf956c |" + StatContext.ANSI_RESET + System.lineSeparator() +
+        StatContext.ANSI_GREEN + "+new+ f4|f|16|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|17c494d126c27755e2134a4388178d808b139ce9" + StatContext.ANSI_RESET + System.lineSeparator() +
+        StatContext.ANSI_BLUE + "~mod~ .| size 16 -> 39 | modifiedTime 2020-09-02T15:43:48.680382Z -> 2020-09-02T15:43:48.680382Z | sha1OrSymbolicLink f81b3e16656c1bd84d7522ed2f83fa996ffd8497 -> 2d8050016ac5619885aaac0402f8c5d88cceb077 |" + StatContext.ANSI_RESET + System.lineSeparator());
   }
 
 }

@@ -34,6 +34,12 @@ public class StatContext {
   private static final String IGNORE = "--ignore";
   private static final String SAVE = "--save";
   private static final String DIFF = "--diff";
+  private static final String COLOR = "--color";
+
+  public static final String ANSI_RESET = "\u001B[0m";
+  public static final String ANSI_GREEN = "\u001B[32m";
+  public static final String ANSI_BLUE = "\u001B[34m";
+  public static final String ANSI_RED = "\u001B[31m";
 
   public final Path baseDirectory;
   public final Path statsDirectory;
@@ -41,6 +47,7 @@ public class StatContext {
   public final boolean computeSha1;
   public final boolean save;
   public final boolean diff;
+  public final boolean color;
   public final Set<String> ignoreSet;
   public final Map<String, FileAttributes> lastFileAttributesMap;
   public final List<String> previousPathsToDiff;
@@ -52,6 +59,7 @@ public class StatContext {
     this.computeSha1 = computeSha1;
     this.save = false;
     this.diff = false;
+    this.color = false;
     this.ignoreSet = new HashSet<>();
     this.lastFileAttributesMap = new HashMap<>();
     this.previousPathsToDiff = Collections.emptyList();
@@ -62,6 +70,7 @@ public class StatContext {
     this.computeSha1 = !arguments.remove(NO_SHA1);
     this.save = arguments.remove(SAVE);
     this.diff = arguments.remove(DIFF);
+    this.color = arguments.remove(COLOR);
     this.ignoreSet = new HashSet<>();
     int ignorePos = arguments.lastIndexOf(IGNORE);
     while (ignorePos != -1 && ignorePos + 1 < arguments.size()) {
@@ -145,7 +154,11 @@ public class StatContext {
         FileAttributes prevAttributes = this.lastFileAttributesMap.get(previousIterator.next());
         int comp = pathToSort(prevAttributes.relativeLinuxPath).compareTo(pathToSort(attributes.relativeLinuxPath));
         if (comp < 0) {
-          out.println("-del- " + prevAttributes.toString());
+          if (color) {
+            out.println(ANSI_RED + "-del- " + prevAttributes.toString() + ANSI_RESET);
+          } else {
+            out.println("-del- " + prevAttributes.toString());
+          }
           previousIterator.remove();
         } else if (comp == 0) {
           compared = true;
@@ -174,14 +187,22 @@ public class StatContext {
             if (!prevAttributes.sha1OrSymbolicLink.equals(attributes.sha1OrSymbolicLink)) {
               diffLine.append(" sha1OrSymbolicLink ").append(prevAttributes.sha1OrSymbolicLink).append(" -> ").append(attributes.sha1OrSymbolicLink).append(" |");
             }
-            out.println(diffLine.toString());
+            if (color) {
+              out.println(ANSI_BLUE + diffLine.toString() + ANSI_RESET);
+            } else {
+              out.println(diffLine.toString());
+            }
           }
         } else {
           break;
         }
       }
       if (!compared) {
-        out.println("+new+ " + attributes.toString());
+        if (color) {
+          out.println(ANSI_GREEN + "+new+ " + attributes.toString() + ANSI_RESET);
+        } else {
+          out.println("+new+ " + attributes.toString());
+        }
       }
     } else {
       out.println(attributes.toString());
