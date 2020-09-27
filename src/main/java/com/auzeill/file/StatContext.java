@@ -23,12 +23,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StatContext {
 
-  public static final String DIRECTORY_STATS = ".directory-stats";
+  public static final String DEFAULT_STATS_DIRECTORY = ".directory-stats";
+  public static final String STATS_DIRECTORY_OPTION = "--stats-directory";
   private static final String NO_SHA1 = "--no-sha1";
   private static final String IGNORE = "--ignore";
   private static final String SAVE = "--save";
 
   public final Path baseDirectory;
+  public final Path statsDirectory;
   public final Path rootPath;
   public final boolean computeSha1;
   public final boolean save;
@@ -37,6 +39,7 @@ public class StatContext {
 
   public StatContext(Path baseDirectory, Path rootPath, boolean computeSha1) {
     this.baseDirectory = baseDirectory;
+    this.statsDirectory = this.baseDirectory.resolve(StatContext.DEFAULT_STATS_DIRECTORY);
     this.rootPath = rootPath;
     this.computeSha1 = computeSha1;
     this.save = false;
@@ -56,6 +59,13 @@ public class StatContext {
       arguments.remove(ignorePos);
       ignorePos = arguments.lastIndexOf(IGNORE);
     }
+    String customStatsDirectory = "";
+    int statsDirectoryOptionPos = arguments.lastIndexOf(STATS_DIRECTORY_OPTION);
+    if (statsDirectoryOptionPos != -1 && statsDirectoryOptionPos + 1 < arguments.size()) {
+      customStatsDirectory = arguments.get(statsDirectoryOptionPos + 1);
+      arguments.remove(statsDirectoryOptionPos + 1);
+      arguments.remove(statsDirectoryOptionPos);
+    }
     if (arguments.isEmpty()) {
       this.rootPath = Paths.get(".").toRealPath(LinkOption.NOFOLLOW_LINKS);
     } else if (arguments.size() == 1) {
@@ -68,19 +78,25 @@ public class StatContext {
     } else {
       this.baseDirectory = this.rootPath.getParent();
     }
+    if (!customStatsDirectory.isEmpty()) {
+      this.statsDirectory = Paths.get(customStatsDirectory);
+      this.ignoreSet.add(this.baseDirectory.relativize(this.statsDirectory).toString());
+    } else {
+      this.statsDirectory = this.baseDirectory.resolve(StatContext.DEFAULT_STATS_DIRECTORY);
+      this.ignoreSet.add(StatContext.DEFAULT_STATS_DIRECTORY);
+    }
     this.lastFileAttributesMap = new HashMap<>();
-    Path directoryStats = this.baseDirectory.resolve(StatContext.DIRECTORY_STATS);
-    if (Files.isDirectory(directoryStats)) {
-      Path ignorePath = directoryStats.resolve("ignore");
+    if (Files.isDirectory(statsDirectory)) {
+      Path ignorePath = statsDirectory.resolve("ignore");
       if (Files.exists(ignorePath)) {
         this.ignoreSet.addAll(Files.readAllLines(ignorePath, UTF_8));
       }
-      Optional<String> lastStat = Files.list(directoryStats)
+      Optional<String> lastStat = Files.list(statsDirectory)
         .map(p -> p.getFileName().toString())
         .filter(name -> name.startsWith("stat-"))
         .max(Comparator.comparing(Object::toString));
       if (lastStat.isPresent()) {
-        Path lastStatPath = directoryStats.resolve(lastStat.get());
+        Path lastStatPath = statsDirectory.resolve(lastStat.get());
         for (String line : Files.readAllLines(lastStatPath, UTF_8)) {
           FileAttributes attributes = FileAttributes.fromString(line);
           lastFileAttributesMap.put(attributes.relativeLinuxPath, attributes);
@@ -90,9 +106,9 @@ public class StatContext {
   }
 
   public Path newStatSavedPath() {
-    SimpleDateFormat format = new SimpleDateFormat("'stat'-yyyy.MM.dd-HH'h'mm'm'ss's'S", Locale.ROOT);
+    SimpleDateFormat format = new SimpleDateFormat("'stat'-yyyy.MM.dd-HH'h'mm'm'ss's'SSS", Locale.ROOT);
     format.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return baseDirectory.resolve(StatContext.DIRECTORY_STATS).resolve(format.format(new Date()));
+    return statsDirectory.resolve(format.format(new Date()));
   }
 
   public boolean include(String relativeLinuxPath) {

@@ -35,7 +35,7 @@ public class Stats {
   }
 
   public static FileAttributes stats(PrintStream out, StatContext context, Path path) throws IOException {
-    if (path.getFileName().toString().equals(StatContext.DIRECTORY_STATS)) {
+    if (path.getFileName().toString().equals(StatContext.DEFAULT_STATS_DIRECTORY)) {
       return null;
     }
     FileAttributes attributes = FileAttributes.fromPath(context, path);

@@ -45,10 +45,10 @@ class FileAttributesTest {
     assertThat(attributes.size).isEqualTo(4);
     assertThat(attributes.owner).isEqualTo("alban");
     assertThat(attributes.group).isEqualTo("alban");
-    assertThat(attributes.permissions).isEqualTo("rw-rw-r--");
-    assertThat(attributes.modifiedTime).isEqualTo("2020-09-02T15:37:56.940581Z");
+    assertThat(attributes.permissions).matches("rw-r[w\\-]-r--");
+    assertThat(attributes.modifiedTime).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}Z");
     assertThat(attributes.sha1OrSymbolicLink).isEqualTo("a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0");
-    assertThat(attributes.toString()).isEqualTo("resources/data.txt|f|4|alban|alban|rw-rw-r--|2020-09-02T15:37:56.940581Z|a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0");
+    assertThat(forceSysFields(attributes.toString())).isEqualTo("resources/data.txt|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0");
   }
 
   @Test
@@ -63,9 +63,15 @@ class FileAttributesTest {
     assertThat(attributes.owner).isEqualTo("alban");
     assertThat(attributes.group).isEqualTo("alban");
     assertThat(attributes.permissions).isEqualTo("rwxrwxrwx");
-    assertThat(attributes.modifiedTime).isEqualTo("2020-09-02T15:43:48.680382Z");
+    assertThat(attributes.modifiedTime).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}Z");
     assertThat(attributes.sha1OrSymbolicLink).isEqualTo("data.txt");
-    assertThat(attributes.toString()).isEqualTo("resources/link.txt|l|8|alban|alban|rwxrwxrwx|2020-09-02T15:43:48.680382Z|data.txt");
+    assertThat(forceSysFields(attributes.toString())).isEqualTo("resources/link.txt|l|8|alban|alban|rwxrwxrwx|2020-09-02T15:43:48.680382Z|data.txt");
+  }
+
+  public static String forceSysFields(String data) {
+    return data
+      .replaceAll("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}Z", "2020-09-02T15:43:48.680382Z")
+      .replaceAll("rw-rw-r--", "rw-r--r--");
   }
 
 }
