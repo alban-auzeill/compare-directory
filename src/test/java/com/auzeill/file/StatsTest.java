@@ -109,4 +109,41 @@ class StatsTest {
       ".|d|4|alban|alban|rwx------|2020-09-02T15:43:48.680382Z|158b484ae1f6f64f89da22397d25fbdafad02252" + System.lineSeparator());
   }
 
+  @Test
+  void diff_from_previous(@TempDir Path tempDir) throws IOException {
+    Files.writeString(tempDir.resolve("f1"), "abcd", UTF_8);
+    Files.writeString(tempDir.resolve("f2"), "efgh", UTF_8);
+    Files.writeString(tempDir.resolve("f3"), "ijdk", UTF_8);
+    Files.writeString(tempDir.resolve("f5"), "efgh", UTF_8);
+
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out, true, UTF_8);
+    Stats.stats(stream, new String[] { "--save", tempDir.toString() });
+    String output = new String(out.toByteArray(), UTF_8);
+    assertThat(output).matches(tempDir.toString() + File.separator + ".directory-stats" + File.separator + "stat-\\d{4}\\.\\d{2}\\.\\d{2}-\\d{2}h\\d{2}m\\d{2}s\\d{3}" + System.lineSeparator());
+    String statPath = output.replaceFirst("[\r\n]+$", "");
+    String fileContent = Files.readString(Paths.get(statPath), UTF_8);
+    assertThat(FileAttributesTest.forceSysFields(fileContent)).isEqualTo("" +
+      "f1|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|81fe8bfe87576c3ecb22426f8e57847382917acf" + System.lineSeparator() +
+      "f2|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|2aed8aa9f826c21ef07d5ee15b48eea06e9c8a62" + System.lineSeparator() +
+      "f3|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|cca5603cae64651971a35bc1488f0d23ddabdff9" + System.lineSeparator() +
+      "f5|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|2aed8aa9f826c21ef07d5ee15b48eea06e9c8a62" + System.lineSeparator() +
+      ".|d|16|alban|alban|rwx------|2020-09-02T15:43:48.680382Z|f81b3e16656c1bd84d7522ed2f83fa996ffd8497" + System.lineSeparator());
+
+
+    Files.delete(tempDir.resolve("f2"));
+    Files.writeString(tempDir.resolve("f3"), "changed content", UTF_8);
+    Files.writeString(tempDir.resolve("f4"), "new file content", UTF_8);
+
+    out = new ByteArrayOutputStream();
+    stream = new PrintStream(out, true, UTF_8);
+    Stats.stats(stream, new String[] { "--diff", tempDir.toString() });
+    assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
+      .isEqualTo("" +
+        "-del- f2|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|2aed8aa9f826c21ef07d5ee15b48eea06e9c8a62" + System.lineSeparator() +
+        "~mod~ f3| size 4 -> 15 | modifiedTime 2020-09-02T15:43:48.680382Z -> 2020-09-02T15:43:48.680382Z | sha1OrSymbolicLink cca5603cae64651971a35bc1488f0d23ddabdff9 -> 1fa817e97796161063e307eac706bb8b06cf956c |" + System.lineSeparator() +
+        "+new+ f4|f|16|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|17c494d126c27755e2134a4388178d808b139ce9" + System.lineSeparator() +
+        "~mod~ .| size 16 -> 39 | modifiedTime 2020-09-02T15:43:48.680382Z -> 2020-09-02T15:43:48.680382Z | sha1OrSymbolicLink f81b3e16656c1bd84d7522ed2f83fa996ffd8497 -> 2d8050016ac5619885aaac0402f8c5d88cceb077 |" + System.lineSeparator());
+  }
+
 }

@@ -21,6 +21,7 @@ class StatContextTest {
     assertThat(context.baseDirectory.toString()).isEqualTo(Paths.get("src").toRealPath().toString());
     assertThat(context.computeSha1).isEqualTo(true);
     assertThat(context.save).isEqualTo(false);
+    assertThat(context.diff).isEqualTo(false);
   }
 
   @Test
@@ -35,6 +36,13 @@ class StatContextTest {
     StatContext context = new StatContext(new String[] {"--save", "src"});
     assertThat(context.baseDirectory.toString()).isEqualTo(Paths.get("src").toRealPath().toString());
     assertThat(context.save).isEqualTo(true);
+  }
+
+  @Test
+  void diff() throws IOException {
+    StatContext context = new StatContext(new String[] {"--diff", "src"});
+    assertThat(context.baseDirectory.toString()).isEqualTo(Paths.get("src").toRealPath().toString());
+    assertThat(context.diff).isEqualTo(true);
   }
 
 }

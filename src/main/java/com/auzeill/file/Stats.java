@@ -32,6 +32,7 @@ public class Stats {
     } else {
       stats(out, context, context.rootPath);
     }
+    context.exitStats(out);
   }
 
   public static FileAttributes stats(PrintStream out, StatContext context, Path path) throws IOException {
@@ -61,7 +62,7 @@ public class Stats {
           attributes.modifiedTime,
           context.computeSha1 ? Sha1.digest(allSha1.toString().getBytes(UTF_8)) : "");
       }
-      out.println(attributes.toString());
+      context.printStats(out, attributes);
       return attributes;
     } else {
       return null;
