@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +43,9 @@ public class Stats {
       if (attributes.type == FileAttributes.Type.DIRECTORY) {
         long size = 0;
         StringBuilder allSha1 = new StringBuilder();
-        List<Path> childPaths = Files.list(path).sorted(Comparator.comparing(p -> StatContext.pathToSort(p.getFileName().toString()))).collect(Collectors.toList());
+        List<Path> childPaths = Files.list(path)
+          .sorted((a, b) -> FileAttributes.comparePath(a.getFileName().toString(), b.getFileName().toString()))
+          .collect(Collectors.toList());
         for (Path childPath : childPaths) {
           FileAttributes childAttributes = stats(out, context, childPath);
           if (childAttributes != null) {

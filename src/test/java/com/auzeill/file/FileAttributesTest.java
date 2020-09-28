@@ -3,8 +3,11 @@ package com.auzeill.file;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
+import static com.auzeill.file.FileAttributes.comparePath;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -66,6 +69,62 @@ class FileAttributesTest {
     assertThat(attributes.modifiedTime).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}Z");
     assertThat(attributes.sha1OrSymbolicLink).isEqualTo("data.txt");
     assertThat(forceSysFields(attributes.toString())).isEqualTo("resources/link.txt|l|8|alban|alban|rwxrwxrwx|2020-09-02T15:43:48.680382Z|data.txt");
+  }
+
+  @Test
+  void compare_path() {
+    assertThat(comparePath('/', '/')).isEqualTo(0);
+    assertThat(comparePath('\\', '\\')).isEqualTo(0);
+    assertThat(comparePath('a', 'a')).isEqualTo(0);
+    assertThat(comparePath('a', '/')).isEqualTo(+1);
+    assertThat(comparePath('/', 'a')).isEqualTo(-1);
+    assertThat(comparePath('a', 'b')).isEqualTo(-1);
+    assertThat(comparePath('b', 'a')).isEqualTo(+1);
+
+    assertThat(comparePath("a/b", "a\\b")).isEqualTo(0);
+    assertThat(comparePath("/", ".")).isEqualTo(-1);
+    assertThat(comparePath(".", ".")).isEqualTo(0);
+    assertThat(comparePath("a", "a")).isEqualTo(0);
+    assertThat(comparePath("/", "/")).isEqualTo(0);
+
+    List<String> paths = Arrays.asList(
+      "c",
+      "aa",
+      "a/bb",
+      "a/aa",
+      "b/a",
+      "b",
+      "a/b",
+      "bb",
+      "a",
+      "b/bb",
+      "b/b",
+      ".",
+      "bb/a",
+      "a/a",
+      "c/a",
+      "b/aa"
+    );
+    paths.sort(FileAttributes::comparePath);
+
+    assertThat(paths).containsExactly(
+      "a/a",
+      "a/aa",
+      "a/b",
+      "a/bb",
+      "a",
+      "aa",
+      "b/a",
+      "b/aa",
+      "b/b",
+      "b/bb",
+      "b",
+      "bb/a",
+      "bb",
+      "c/a",
+      "c",
+      "."
+    );
   }
 
   public static String forceSysFields(String data) {

@@ -125,15 +125,8 @@ public class StatContext {
     }
 
     this.previousPathsToDiff = this.lastFileAttributesMap.keySet().stream()
-      .sorted(Comparator.comparing(StatContext::pathToSort))
+      .sorted(FileAttributes::comparePath)
       .collect(Collectors.toCollection(LinkedList::new));
-  }
-
-  static String pathToSort(String path) {
-    if (path.equals(".")) {
-      return "\uFFFF\uFFFF";
-    }
-    return path.replace('\\', '\u0001').replace('/', '\u0001') + "\u0001\uFFFF";
   }
 
   public Path newStatSavedPath() {
@@ -152,7 +145,7 @@ public class StatContext {
       boolean compared = false;
       while (previousIterator.hasNext()) {
         FileAttributes prevAttributes = this.lastFileAttributesMap.get(previousIterator.next());
-        int comp = pathToSort(prevAttributes.relativeLinuxPath).compareTo(pathToSort(attributes.relativeLinuxPath));
+        int comp = FileAttributes.comparePath(prevAttributes.relativeLinuxPath, attributes.relativeLinuxPath);
         if (comp < 0) {
           if (color) {
             out.println(ANSI_RED + "-del- " + prevAttributes.toString() + ANSI_RESET);

@@ -127,4 +127,48 @@ public class FileAttributes {
     return textPath;
   }
 
+  public static int comparePath(String path1, String path2) {
+    if (path1.equals(path2)) {
+      return 0;
+    } else if (path1.equals(".")) {
+      return +1;
+    } else if (path2.equals(".")) {
+      return -1;
+    }
+    int i = 0;
+    while (i < path1.length() && i < path2.length()) {
+      char ch1 = normalize(path1.charAt(i));
+      char ch2 = normalize(path2.charAt(i));
+      if (ch1 != ch2) {
+        return comparePath(ch1, ch2);
+      }
+      i++;
+    }
+    if (path1.length() == path2.length()) {
+      return 0;
+    } else if (path1.length() < path2.length()) {
+      return normalize(path2.charAt(i)) == '/' ? +1 : -1;
+    } else {
+      return normalize(path1.charAt(i)) == '/' ? -1 : +1;
+    }
+  }
+
+  public static int comparePath(char ch1, char ch2) {
+    if (ch1 == ch2) {
+      return 0;
+    } else  if (ch1 == '/') {
+      return -1;
+    } else if (ch2 == '/') {
+      return +1;
+    } else if (ch1 < ch2) {
+      return -1;
+    } else {
+      return +1;
+    }
+  }
+
+  private static char normalize(char ch) {
+    return ch == '\\' ? '/' : ch;
+  }
+
 }
