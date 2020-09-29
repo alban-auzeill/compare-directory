@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -43,9 +44,12 @@ public class Stats {
       if (attributes.type == FileAttributes.Type.DIRECTORY) {
         long size = 0;
         StringBuilder allSha1 = new StringBuilder();
-        List<Path> childPaths = Files.list(path)
-          .sorted((a, b) -> FileAttributes.comparePath(a.getFileName().toString(), b.getFileName().toString()))
-          .collect(Collectors.toList());
+        List<Path> childPaths;
+        try (Stream<Path> fileList = Files.list(path)) {
+          childPaths = fileList
+            .sorted((a, b) -> FileAttributes.comparePath(a.getFileName().toString(), b.getFileName().toString()))
+            .collect(Collectors.toList());
+        }
         for (Path childPath : childPaths) {
           FileAttributes childAttributes = stats(out, context, childPath);
           if (childAttributes != null) {
