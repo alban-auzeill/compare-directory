@@ -7,6 +7,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class FileAttributes {
 
@@ -67,10 +69,8 @@ public class FileAttributes {
       sha1OrSymbolicLink = normalize(Files.readSymbolicLink(path));
     } else if (Files.isDirectory(path)) {
       type = Type.DIRECTORY;
-    } else if (Files.isRegularFile(path)) {
-      type = Type.FILE;
     } else if (Files.exists(path)) {
-      throw new IllegalArgumentException("Unsupported file type: " + path);
+      type = Type.FILE;
     } else {
       throw new IllegalArgumentException("File not found: " + path);
     }
@@ -100,8 +100,14 @@ public class FileAttributes {
 
   public static FileAttributes fromString(String fileDescription) {
     String[] parts = fileDescription.split("\\|", -1);
-    if (parts.length != 8) {
+    if (parts.length < 8) {
       throw new IllegalArgumentException("Invalid fileDescription: " + fileDescription);
+    } else if (parts.length > 8) {
+      parts = new String[] {
+        Arrays.stream(parts).limit(parts.length - 7).collect(Collectors.joining("|")),
+        parts[parts.length - 7], parts[parts.length - 6], parts[parts.length - 5],
+        parts[parts.length - 4], parts[parts.length - 3], parts[parts.length - 2], parts[parts.length - 1]
+      };
     }
     String relativeLinuxPath = parts[0];
     Type type = Type.fromString(parts[1]);
