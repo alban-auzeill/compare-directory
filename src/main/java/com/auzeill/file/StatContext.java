@@ -49,6 +49,7 @@ public class StatContext {
   public final boolean diff;
   public final boolean color;
   public final Set<String> ignoreSet;
+  public final List<String> endWithIgnoreList;
   public final Map<String, FileAttributes> lastFileAttributesMap;
   public final List<String> previousPathsToDiff;
 
@@ -61,6 +62,7 @@ public class StatContext {
     this.diff = false;
     this.color = false;
     this.ignoreSet = new HashSet<>();
+    this.endWithIgnoreList = new ArrayList<>();
     this.lastFileAttributesMap = new HashMap<>();
     this.previousPathsToDiff = Collections.emptyList();
   }
@@ -72,9 +74,15 @@ public class StatContext {
     this.diff = arguments.remove(DIFF);
     this.color = arguments.remove(COLOR);
     this.ignoreSet = new HashSet<>();
+    this.endWithIgnoreList = new ArrayList<>();
     int ignorePos = arguments.lastIndexOf(IGNORE);
     while (ignorePos != -1 && ignorePos + 1 < arguments.size()) {
-      ignoreSet.add(arguments.get(ignorePos + 1));
+      String argument = arguments.get(ignorePos + 1);
+      if (argument.startsWith("*")) {
+        endWithIgnoreList.add(argument.substring(1));
+      } else {
+        ignoreSet.add(argument);
+      }
       arguments.remove(ignorePos + 1);
       arguments.remove(ignorePos);
       ignorePos = arguments.lastIndexOf(IGNORE);
@@ -104,6 +112,7 @@ public class StatContext {
     } else {
       this.statsDirectory = this.baseDirectory.resolve(StatContext.DEFAULT_STATS_DIRECTORY);
       this.ignoreSet.add(StatContext.DEFAULT_STATS_DIRECTORY);
+      this.endWithIgnoreList.add("/" + StatContext.DEFAULT_STATS_DIRECTORY);
     }
     this.lastFileAttributesMap = new HashMap<>();
     if (Files.isDirectory(statsDirectory)) {
@@ -136,7 +145,7 @@ public class StatContext {
   }
 
   public boolean include(String relativeLinuxPath) {
-    return !ignoreSet.contains(relativeLinuxPath);
+    return !ignoreSet.contains(relativeLinuxPath) && this.endWithIgnoreList.stream().noneMatch(relativeLinuxPath::endsWith);
   }
 
   public void printStats(PrintStream out, FileAttributes attributes) {

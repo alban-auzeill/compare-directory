@@ -45,4 +45,12 @@ class StatContextTest {
     assertThat(context.diff).isEqualTo(true);
   }
 
+  @Test
+  void ignore() throws IOException {
+    StatContext context = new StatContext(new String[] {"--ignore", "f1", "--ignore", "*/.git", "--ignore", "*/target", "--ignore", "f2", "src"});
+    assertThat(context.baseDirectory.toString()).isEqualTo(Paths.get("src").toRealPath().toString());
+    assertThat(context.ignoreSet).containsExactlyInAnyOrder("f1", "f2", ".directory-stats");
+    assertThat(context.endWithIgnoreList).containsExactlyInAnyOrder("/.git", "/target", "/.directory-stats");
+  }
+
 }

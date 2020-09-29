@@ -48,6 +48,16 @@ class StatsTest {
   }
 
   @Test
+  void test_ignore_end_with() throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out, true, UTF_8);
+    Stats.stats(stream, new String[] { "--ignore", "*.txt", Paths.get("src", "test", "resources").toString()});
+    assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
+      .isEqualTo("" +
+        ".|d|0|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|da39a3ee5e6b4b0d3255bfef95601890afd80709" + System.lineSeparator());
+  }
+
+  @Test
   void save_in_default_stats_directory(@TempDir Path tempDir) throws IOException {
     Files.writeString(tempDir.resolve("f1"), "abcd", UTF_8);
     Files.writeString(tempDir.resolve("f2"), "efgh", UTF_8);
