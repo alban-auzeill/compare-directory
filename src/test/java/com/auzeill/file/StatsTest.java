@@ -137,7 +137,7 @@ class StatsTest {
   }
 
   @Test
-  void diff_from_previous(@TempDir Path tempDir) throws IOException {
+  void diff_from_previous(@TempDir Path tempDir) throws IOException, InterruptedException {
     Files.writeString(tempDir.resolve("f1"), "abcd", UTF_8);
     Files.writeString(tempDir.resolve("f2"), "efgh", UTF_8);
     Files.writeString(tempDir.resolve("f3"), "ijdk", UTF_8);
@@ -157,6 +157,8 @@ class StatsTest {
       "f5|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|2aed8aa9f826c21ef07d5ee15b48eea06e9c8a62" + System.lineSeparator() +
       ".|d|16|alban|alban|rwx------|2020-09-02T15:43:48.680382Z|f81b3e16656c1bd84d7522ed2f83fa996ffd8497" + System.lineSeparator());
 
+    // ensure the following modified file date will be different
+    Thread.sleep(10);
 
     Files.delete(tempDir.resolve("f2"));
     Files.writeString(tempDir.resolve("f3"), "changed content", UTF_8);
