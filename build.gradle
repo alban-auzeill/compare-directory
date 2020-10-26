@@ -3,7 +3,11 @@ plugins {
 }
 
 group 'org.example'
-version '1.1-SNAPSHOT'
+project.version '1.1-SNAPSHOT'
+
+if (project.hasProperty('releaseVersion')) {
+    project.version = project.releaseVersion
+}
 
 repositories {
     mavenCentral()
