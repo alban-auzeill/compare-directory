@@ -13,14 +13,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
@@ -48,8 +46,7 @@ public class StatContext {
   public final boolean save;
   public final boolean diff;
   public final boolean color;
-  public final Set<String> ignoreSet;
-  public final List<String> endWithIgnoreList;
+  public final IgnoreExpression.Matcher ignoreMatcher;
   public final Map<String, FileAttributes> lastFileAttributesMap;
   public final List<String> previousPathsToDiff;
 
@@ -61,8 +58,7 @@ public class StatContext {
     this.save = false;
     this.diff = false;
     this.color = false;
-    this.ignoreSet = new HashSet<>();
-    this.endWithIgnoreList = new ArrayList<>();
+    this.ignoreMatcher = new IgnoreExpression.Matcher();
     this.lastFileAttributesMap = new HashMap<>();
     this.previousPathsToDiff = Collections.emptyList();
   }
@@ -73,22 +69,16 @@ public class StatContext {
     this.save = arguments.remove(SAVE);
     this.diff = arguments.remove(DIFF);
     this.color = arguments.remove(COLOR);
-    this.ignoreSet = new HashSet<>();
-    this.endWithIgnoreList = new ArrayList<>();
-    int ignorePos = arguments.lastIndexOf(IGNORE);
+    this.ignoreMatcher = new IgnoreExpression.Matcher();
+    int ignorePos = arguments.indexOf(IGNORE);
     while (ignorePos != -1 && ignorePos + 1 < arguments.size()) {
-      String argument = arguments.get(ignorePos + 1);
-      if (argument.startsWith("*")) {
-        endWithIgnoreList.add(argument.substring(1));
-      } else {
-        ignoreSet.add(argument);
-      }
+      ignoreMatcher.add(arguments.get(ignorePos + 1));
       arguments.remove(ignorePos + 1);
       arguments.remove(ignorePos);
-      ignorePos = arguments.lastIndexOf(IGNORE);
+      ignorePos = arguments.indexOf(IGNORE);
     }
     String customStatsDirectory = "";
-    int statsDirectoryOptionPos = arguments.lastIndexOf(STATS_DIRECTORY_OPTION);
+    int statsDirectoryOptionPos = arguments.indexOf(STATS_DIRECTORY_OPTION);
     if (statsDirectoryOptionPos != -1 && statsDirectoryOptionPos + 1 < arguments.size()) {
       customStatsDirectory = arguments.get(statsDirectoryOptionPos + 1);
       arguments.remove(statsDirectoryOptionPos + 1);
@@ -108,17 +98,19 @@ public class StatContext {
     }
     if (!customStatsDirectory.isEmpty()) {
       this.statsDirectory = Paths.get(customStatsDirectory);
-      this.ignoreSet.add(this.baseDirectory.relativize(this.statsDirectory).toString());
+      this.ignoreMatcher.add(this.baseDirectory.relativize(this.statsDirectory).toString());
     } else {
       this.statsDirectory = this.baseDirectory.resolve(StatContext.DEFAULT_STATS_DIRECTORY);
-      this.ignoreSet.add(StatContext.DEFAULT_STATS_DIRECTORY);
-      this.endWithIgnoreList.add("/" + StatContext.DEFAULT_STATS_DIRECTORY);
+      this.ignoreMatcher.add(StatContext.DEFAULT_STATS_DIRECTORY);
+      this.ignoreMatcher.add("*/" + StatContext.DEFAULT_STATS_DIRECTORY);
     }
     this.lastFileAttributesMap = new HashMap<>();
     if (Files.isDirectory(statsDirectory)) {
       Path ignorePath = statsDirectory.resolve("ignore");
       if (Files.exists(ignorePath)) {
-        this.ignoreSet.addAll(Files.readAllLines(ignorePath, UTF_8));
+        for (String pattern : Files.readAllLines(ignorePath, UTF_8)) {
+          this.ignoreMatcher.add(pattern);
+        }
       }
       Optional<String> lastStat = Files.list(statsDirectory)
         .map(p -> p.getFileName().toString())
@@ -144,8 +136,8 @@ public class StatContext {
     return statsDirectory.resolve(format.format(new Date()));
   }
 
-  public boolean include(String relativeLinuxPath) {
-    return !ignoreSet.contains(relativeLinuxPath) && this.endWithIgnoreList.stream().noneMatch(relativeLinuxPath::endsWith);
+  public boolean include(Path absolutePath, String relativePath) {
+    return !this.ignoreMatcher.ignore(absolutePath, relativePath);
   }
 
   public void printStats(PrintStream out, FileAttributes attributes) {

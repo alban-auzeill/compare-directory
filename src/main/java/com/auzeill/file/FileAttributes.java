@@ -15,7 +15,8 @@ public class FileAttributes {
   public enum Type {
     FILE("f"),
     DIRECTORY("d"),
-    SYMBOLIC_LINK("l");
+    SYMBOLIC_LINK("l"),
+    OTHER("o");
 
     public final String code;
 
@@ -69,8 +70,10 @@ public class FileAttributes {
       sha1OrSymbolicLink = normalize(Files.readSymbolicLink(path));
     } else if (Files.isDirectory(path)) {
       type = Type.DIRECTORY;
-    } else if (Files.exists(path)) {
+    } else if (Files.isRegularFile(path)) {
       type = Type.FILE;
+    } else if (Files.exists(path)) {
+      type = Type.OTHER;
     } else {
       throw new IllegalArgumentException("File not found: " + path);
     }

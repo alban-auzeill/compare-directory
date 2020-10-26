@@ -19,12 +19,14 @@ class StatsTest {
   void test_directory() throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out, true, UTF_8);
-    Stats.stats(stream, new String[] {Paths.get("src", "test", "resources").toString()});
+    Stats.stats(stream, new String[] { Paths.get("src", "test", "resources").toString()});
     assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
       .isEqualTo("" +
         "data.txt|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0" + System.lineSeparator() +
         "link.txt|l|8|alban|alban|rwxrwxrwx|2020-09-02T15:43:48.680382Z|data.txt" + System.lineSeparator() +
-        ".|d|12|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|76a57a2f4b5b9eab89b7ac66722b7bc480b81b6b" + System.lineSeparator());
+        "subfolder/subfile.txt|f|9|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|326efcd48d5188b2c2f820b1b6b4a62b8497e9c9" + System.lineSeparator() +
+        "subfolder|d|9|alban|alban|rwxr-xr-x|2020-09-02T15:43:48.680382Z|2c94f765cf3d9fe03281b14f07f3cbf338f620ca" + System.lineSeparator() +
+        ".|d|21|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|cfb6eec19128353d2a5bad7c73cd8efc33358979" + System.lineSeparator());
   }
 
   @Test
@@ -44,7 +46,21 @@ class StatsTest {
     assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
       .isEqualTo("" +
         "data.txt|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0" + System.lineSeparator() +
-        ".|d|4|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|ad404b01110b7ae2547f71361377c2f72194319a" + System.lineSeparator());
+        "subfolder/subfile.txt|f|9|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|326efcd48d5188b2c2f820b1b6b4a62b8497e9c9" + System.lineSeparator() +
+        "subfolder|d|9|alban|alban|rwxr-xr-x|2020-09-02T15:43:48.680382Z|2c94f765cf3d9fe03281b14f07f3cbf338f620ca" + System.lineSeparator() +
+        ".|d|13|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|4807f6127ef42b333d2d382237a8b04a7800acbf" + System.lineSeparator());
+  }
+
+  @Test
+  void test_conditional_ignore() throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out, true, UTF_8);
+    Stats.stats(stream, new String[] { "--ignore", "(?sibling:data.txt)subfolder", Paths.get("src", "test", "resources").toString()});
+    assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
+      .isEqualTo("" +
+        "data.txt|f|4|alban|alban|rw-r--r--|2020-09-02T15:43:48.680382Z|a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0" + System.lineSeparator() +
+        "link.txt|l|8|alban|alban|rwxrwxrwx|2020-09-02T15:43:48.680382Z|data.txt" + System.lineSeparator() +
+        ".|d|12|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|76a57a2f4b5b9eab89b7ac66722b7bc480b81b6b" + System.lineSeparator());
   }
 
   @Test
@@ -54,7 +70,8 @@ class StatsTest {
     Stats.stats(stream, new String[] { "--ignore", "*.txt", Paths.get("src", "test", "resources").toString()});
     assertThat(FileAttributesTest.forceSysFields(new String(out.toByteArray(), UTF_8)))
       .isEqualTo("" +
-        ".|d|0|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|da39a3ee5e6b4b0d3255bfef95601890afd80709" + System.lineSeparator());
+        "subfolder|d|0|alban|alban|rwxr-xr-x|2020-09-02T15:43:48.680382Z|da39a3ee5e6b4b0d3255bfef95601890afd80709" + System.lineSeparator() +
+        ".|d|0|alban|alban|rwxrwxr-x|2020-09-02T15:43:48.680382Z|10a34637ad661d98ba3344717656fcc76209c2f8" + System.lineSeparator());
   }
 
   @Test

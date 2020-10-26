@@ -49,8 +49,11 @@ class StatContextTest {
   void ignore() throws IOException {
     StatContext context = new StatContext(new String[] {"--ignore", "f1", "--ignore", "*/.git", "--ignore", "*/target", "--ignore", "f2", "src"});
     assertThat(context.baseDirectory.toString()).isEqualTo(Paths.get("src").toRealPath().toString());
-    assertThat(context.ignoreSet).containsExactlyInAnyOrder("f1", "f2", ".directory-stats");
-    assertThat(context.endWithIgnoreList).containsExactlyInAnyOrder("/.git", "/target", "/.directory-stats");
+    assertThat(context.ignoreMatcher.ignoredRelativePaths).containsExactlyInAnyOrder("f1", "f2", ".directory-stats");
+    assertThat(context.ignoreMatcher.advancedMatchers).hasSize(3);
+    assertThat(((IgnoreExpression.EndWith) context.ignoreMatcher.advancedMatchers.get(0)).suffix).isEqualTo("/.git");
+    assertThat(((IgnoreExpression.EndWith) context.ignoreMatcher.advancedMatchers.get(1)).suffix).isEqualTo("/target");
+    assertThat(((IgnoreExpression.EndWith) context.ignoreMatcher.advancedMatchers.get(2)).suffix).isEqualTo("/.directory-stats");
   }
 
 }

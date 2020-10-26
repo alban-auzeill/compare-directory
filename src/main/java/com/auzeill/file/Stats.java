@@ -40,7 +40,7 @@ public class Stats {
       return null;
     }
     FileAttributes attributes = FileAttributes.fromPath(context, path);
-    if (context.include(attributes.relativeLinuxPath)) {
+    if (context.include(path, attributes.relativeLinuxPath)) {
       if (attributes.type == FileAttributes.Type.DIRECTORY) {
         long size = 0;
         StringBuilder allSha1 = new StringBuilder();
